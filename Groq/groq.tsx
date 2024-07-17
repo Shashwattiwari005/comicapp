@@ -12,7 +12,7 @@ export function Query() {
     messages: [
       {
         role: "user",
-        content: `give me a story with title : ${title}`,
+        content: `give me a story with title : {}`,
       },
     ],
     model: "llama3-8b-8192",

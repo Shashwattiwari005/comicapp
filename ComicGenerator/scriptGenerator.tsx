@@ -1,14 +1,10 @@
-/* "use client";
-import React, { useContext, useState } from "react";
-import {
-  AppContext,
-  AppContextProvider,
-  useAppContext,
-} from "../context/context";
-import { Input } from "@/components/ui/input";
+"use client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Groq from "groq-sdk";
-import { storeComicData } from "../Supabase/storeComicData";
+import React, { useState } from "react";
+import ScriptLines from "./scriptLines";
+import { useAppContext } from "../context/context";
 
 const groq = new Groq({
   apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
@@ -17,13 +13,14 @@ const groq = new Groq({
 
 export default function ScriptGenerator() {
   const [title, setTitle] = useState("");
+  const { scriptLines, setScriptLines } = useAppContext(); // Stores script lines
 
   function Query() {
     return groq.chat.completions.create({
       messages: [
         {
           role: "user",
-          content: `give me a story in lines with title : ${title}`,
+          content: `give me a story for kids in lines with title : ${title} , it should not contain the title or any other text , there should only be paragraph of the story with minimum 300 words. Also the lines should be separated by full stop. it should not contain any text like here is your story etc give me only text of the story`,
         },
       ],
       model: "llama3-8b-8192",
@@ -32,13 +29,24 @@ export default function ScriptGenerator() {
 
   async function GetScript() {
     const response = await Query();
+    const storyText = response.choices[0].message.content;
+
+    // Separate story into lines based on full stops (periods)
+    const lines = storyText!.split(".");
+
+    // Remove empty lines and potential double periods
+    const scriptLines = lines
+      .filter((line: string) => line.trim() !== "")
+      .map((line: string) => line.trim());
+
+    setScriptLines(scriptLines); // Update state with script lines
 
     console.log(response.choices[0].message.content);
-
-    await storeComicData(title, "", storyLines, imageUrls);
   }
 
-  const handleTitleChange = (event: { target: { value: string } }) => {
+  const handleTitleChange = (event: {
+    target: { value: React.SetStateAction<string> };
+  }) => {
     setTitle(event.target.value);
   };
 
@@ -52,76 +60,10 @@ export default function ScriptGenerator() {
         onChange={handleTitleChange}
       />
       <Button onClick={GetScript}>Submit</Button>
-    </div>
-  );
-}
- */
-
-"use client";
-import React, { useContext, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import Groq from "groq-sdk";
-import processScript from "./lineSeparator"; // Assuming lineSeparator.js in same directory
-import { generateImage } from "./replicate"; // Assuming replicate.js in same directory
-import { storeComicData } from "../Supabase/storeComicData";
-
-const groq = new Groq({
-  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
-
-export default function ScriptGenerator() {
-  const [title, setTitle] = useState("");
-  const [storyLines, setStoryLines] = useState([]); // To store processed lines
-  const [imageUrls, setImageUrls] = useState([]); // To store image URLs
-
-  // Replace this function with your actual script generation logic
-  // This example retrieves a pre-defined script (modify as needed)
-  function Query() {
-    const script = `This is a pre-defined script for demonstration purposes. 
-                      Replace this with your logic to generate a script based on the title.`;
-    return script;
-  }
-
-  async function GetScript() {
-    const script = Query();
-
-    // Process the script into lines
-    //@ts-ignore
-    const processedLines = processScript(script);
-    //@ts-ignore
-    setStoryLines(processedLines);
-
-    // Generate images for each line (consider asynchronous approach)
-    const imageUrls = [];
-    for (const line of processedLines) {
-      //@ts-ignore
-      const image = await generateImage(line);
-      imageUrls.push(image);
-    }
-    //@ts-ignore
-    setImageUrls(imageUrls);
-
-    // Store comic data in Supabase
-    await storeComicData(title, "", storyLines, imageUrls);
-  }
-
-  //@ts-ignore
-  const handleTitleChange = (event) => {
-    setTitle(event.target.value);
-  };
-
-  return (
-    <div>
-      <h1>{title}</h1>
-      <Input
-        value={title}
-        required
-        placeholder="Plot of the story"
-        onChange={handleTitleChange}
-      />
-      <Button onClick={GetScript}>Submit</Button>
+      <div>
+        <h2>Script Lines:</h2>
+        <ScriptLines />
+      </div>
     </div>
   );
 }

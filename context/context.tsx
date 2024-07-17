@@ -1,31 +1,31 @@
 "use client";
-import { createContext, useContext, useState } from "react";
+import React, { useContext, useState } from "react";
+import { createContext } from "react";
 
-export const AppContext = createContext({
-  title: "",
-  setTitle: (title: string) => {},
-  negative: "",
-  setNegative: (negative: string) => {},
-  learning: "",
-  setLearning: (learning: string) => {},
+interface AppContextType {
+  scriptLines: string[];
+  setScriptLines: React.Dispatch<React.SetStateAction<string[]>>;
+}
+
+export const AppContext = createContext<AppContextType>({
+  scriptLines: [],
+  setScriptLines: () => {},
 });
 
-const AppContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [title, setTitle] = useState("");
-  const [negative, setNegative] = useState("");
-  const [learning, setLearning] = useState("");
+export default function Provider({ children }: { children: React.ReactNode }) {
+  const [scriptLines, setScriptLines] = useState<string[]>([]);
 
   return (
-    <AppContext.Provider
-      value={{ title, setTitle, negative, setNegative, learning, setLearning }}
-    >
+    <AppContext.Provider value={{ scriptLines, setScriptLines }}>
       {children}
     </AppContext.Provider>
   );
-};
+}
 
 export const useAppContext = () => {
-  return useContext(AppContext);
+  const context = useContext(AppContext);
+  if (context === undefined) {
+    throw new Error("use context is undefined");
+  }
+  return context;
 };
-
-export { AppContextProvider };
